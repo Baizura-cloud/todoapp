@@ -14,12 +14,21 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-
+  // const loadData = useCallback(async () => {
+  //   try {
+  //     const db = await connectToDatabase()
+  //     await createTables(db)
+  //   } catch (error) {
+  //     console.error(error)
+  //   }
+  // }, [])
   useEffect(() => {
+   // loadData()
     if (loaded) {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+ // }, [loaded,loadData]);
 
   if (!loaded) {
     return null;
