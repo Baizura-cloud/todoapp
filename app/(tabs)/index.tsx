@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,51 +12,27 @@ import {
   Modal,
 } from "react-native";
 import Octicons from "@expo/vector-icons/Octicons";
+import { DataTask } from "@/types";
+import { useSQLiteContext } from "expo-sqlite";
 
 export default function HomeScreen() {
-  interface Task {
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    status: boolean;
-  }
   const [open, setOpen] = useState<boolean>(false)
-  const [tasks, SetTasks] = useState<Task[]>([
-    {
-      id: 1, //sample data
-      title: "Grocery",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      date: "28/10/24",
-      status: false,
-    },
-    {
-      id: 2,
-      title: "Piano Class",
-      description:
-        "Praesent non velit tincidunt, ullamcorper nisi nec, hendrerit nulla.",
-      date: "20/11/24",
-      status: false,
-    },
-    {
-      id: 3,
-      title: "Recipe Blog",
-      description: "Donec maximus sed felis eu imperdiet.",
-      date: "20/10/24",
-      status: true,
-    },
-  ]);
-  const handleStatus = (id:number) =>{
+  const [tasks, SetTasks] = useState<DataTask[]>([]); 
+  //grab data from sqlite
+  const db = useSQLiteContext();
 
+  useEffect(() =>{
+    db.withTransactionAsync(async () =>{
+      await getTask()
+    })
+  },[db])
+  
+  async function getTask() {
+    const result = await db.getAllAsync<DataTask>(`SELECT * FROM Task ORDER BY date`)
+    SetTasks(result)
   }
-  const sortList = (a:Task,b:Task) =>{
-    var dateA = new Date(a.date)
-    var dateB = new Date(b.date)
-    console.log(dateA)
-    console.log(dateB)
-    return dateA > dateB ? 1 : -1
-  }
-  const RenderList = ({ id, title, description, date, status }: Task) => (
+
+  const RenderList = ({ id, title, description, date, status }: DataTask) => (
     <TouchableOpacity onPress={() => setOpen(true)}>
       <View style={styles.listtask} key={id}>
         <View style={styles.headertask}>
@@ -64,7 +40,7 @@ export default function HomeScreen() {
           <Octicons
             name="check-circle"
             size={20}
-            color={status ? "green" : "white"}
+            color={status == "true" ? "green" : "white"}
           />
         </View>
         <Text style={styles.descriptiontask}>{date}</Text>
@@ -77,8 +53,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Task Management</Text>
       <FlatList
-       // data={tasks.sort((a,b)=> a.date.localeCompare(b.date))}
-       data={tasks.sort(sortList)}
+       data={tasks}
         renderItem={({ item }) => (
           <RenderList
             id={item.id}
@@ -90,7 +65,7 @@ export default function HomeScreen() {
         )}
       />
       <Modal
-        animationType="fade"
+        animationType="none"
         transparent={true}
         visible={open}
         onRequestClose={() => {

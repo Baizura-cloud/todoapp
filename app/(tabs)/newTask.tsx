@@ -1,3 +1,5 @@
+import { Task } from "@/types";
+import { useSQLiteContext } from "expo-sqlite";
 import React, { useState } from "react";
 import {
   View,
@@ -6,7 +8,6 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  Button,
   Alert,
   Pressable,
   Modal,
@@ -14,21 +15,26 @@ import {
 import Icon from "react-native-vector-icons/Entypo";
 
 export default function NewTask() {
-  interface Task {
-    title: string;
-    description: string;
-    date: string
-    status: boolean
-  }
   const [task, setTask] = useState<Task>({
     title: "",
     description: "",
     date: "",
-    status: false
+    status: "false"
   });
   const [tasks, setTasks] = useState<Task[]>([]);
   const [editIndex, setEditIndex] = useState<number>(-1);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+
+  //send data to sqlite
+  const db = useSQLiteContext();
+
+  async function sendTask() {
+    db.withTransactionAsync(async () =>{
+      await db.runAsync(`INSERT INTO Task (title, description, date, status) VALUES (?, ?, ?, ?);`,[task.title, task.description, task.date, task.status])
+    })
+    
+  }
+
   const handleAddTask = () => {
     if (task) {
       if (editIndex !== -1) {
@@ -40,42 +46,43 @@ export default function NewTask() {
       } else {
         // Add new task
         setTasks([...tasks, task]);
+        sendTask()
       }
-      setTask({ title: "", description: "", date: "", status: false });
+      setTask({title: "", description: "", date: "", status: "false" });
     }
   };
 
-  const handleEditTask = (index: number) => {
-    const taskToEdit = tasks[index];
-    setTask(taskToEdit);
-    setEditIndex(index);
-  };
+  // const handleEditTask = (index: number) => {
+  //   const taskToEdit = tasks[index];
+  //   setTask(taskToEdit);
+  //   setEditIndex(index);
+  // };
 
-  const handleDeleteTask = (index: number) => {
-    const updatedTasks = [...tasks];
-    updatedTasks.splice(index, 1);
-    setTasks(updatedTasks);
-  };
+  // const handleDeleteTask = (index: number) => {
+  //   const updatedTasks = [...tasks];
+  //   updatedTasks.splice(index, 1);
+  //   setTasks(updatedTasks);
+  // };
 
-  const renderItem = ({ title, description, date }: Task,index:number) => (
-    <View style={styles.task}>
-      <View style={styles.taskItems}>
-      <TouchableOpacity onPress={() => setModalVisible(true)}>
-      <Text style={styles.itemList}>{title}</Text>
-      <Text style={styles.itemList}>{description}</Text>
-      <Text style={styles.itemList}>{date}</Text>
-      </TouchableOpacity>
-      </View>
-      <View style={styles.taskButtons}>
-        <TouchableOpacity onPress={() => handleEditTask(index)}>
-          <Icon name="edit" size={25} color="cyan" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDeleteTask(index)}>
-          <Icon name="trash" size={25} color="red" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  // const renderItem = ({ title, description, date }: Task,index:number) => (
+  //   <View style={styles.task}>
+  //     <View style={styles.taskItems}>
+  //     <TouchableOpacity onPress={() => setModalVisible(true)}>
+  //     <Text style={styles.itemList}>{title}</Text>
+  //     <Text style={styles.itemList}>{description}</Text>
+  //     <Text style={styles.itemList}>{date}</Text>
+  //     </TouchableOpacity>
+  //     </View>
+  //     <View style={styles.taskButtons}>
+  //       <TouchableOpacity onPress={() => handleEditTask(index)}>
+  //         <Icon name="edit" size={25} color="cyan" />
+  //       </TouchableOpacity>
+  //       <TouchableOpacity onPress={() => handleDeleteTask(index)}>
+  //         <Icon name="trash" size={25} color="red" />
+  //       </TouchableOpacity>
+  //     </View>
+  //   </View>
+  // );
 
   return (
     <View style={styles.container}>
@@ -131,11 +138,11 @@ export default function NewTask() {
           {editIndex !== -1 ? "Update Task" : "Add Task"}
         </Text>
       </TouchableOpacity>
-      <FlatList
+      {/* <FlatList
         data={tasks}
         renderItem={({ item,index }) => renderItem(item,index)}
         keyExtractor={(item, index) => index.toString()}
-      />
+      /> */}
       <Modal
         animationType="slide"
         transparent={true}
